@@ -121,8 +121,12 @@ mod ether_vesting {
             .address()?;
         let contract = VestingWallet::new(contract_addr, &account.wallet);
 
-        // TODO: need to help here
-        watch!(contract.receiveEther().value(U256::from(allocation)))?;
+        let tx = TransactionRequest::default()
+            .with_from(account)
+            .with_to(contract_addr)
+            .with_value(U256::from(100));
+
+        let tx_hash = provider.send_transaction(tx).await?.watch().await?;
 
         Ok(contract_addr)
     }
