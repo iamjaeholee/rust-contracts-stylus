@@ -3,9 +3,10 @@
 use abi::VestingWallet;
 use alloy::{
     eips::BlockId,
+    network::TransactionBuilder,
     primitives::{Address, U256},
-    providers::Provider,
-    rpc::types::BlockTransactionsKind,
+    providers::{Provider, ProviderBuilder},
+    rpc::types::{BlockTransactionsKind, TransactionRequest},
     sol,
 };
 use e2e::{
@@ -105,6 +106,7 @@ async fn rejects_zero_address_for_beneficiary(
 }
 
 mod ether_vesting {
+
     use super::*;
 
     async fn deploy(
@@ -119,14 +121,21 @@ mod ether_vesting {
             .deploy()
             .await?
             .address()?;
-        let contract = VestingWallet::new(contract_addr, &account.wallet);
 
         let tx = TransactionRequest::default()
-            .with_from(account)
+            .with_from(account.address())
             .with_to(contract_addr)
             .with_value(U256::from(100));
 
+        let rpc_url = std::env::var("RPC_URL")
+            .expect("failed to load RPC_URL var from env")
+            .parse()
+            .expect("failed to parse RPC_URL string into a URL");
+
+        let provider = ProviderBuilder::new().on_http(rpc_url);
+
         let tx_hash = provider.send_transaction(tx).await?.watch().await?;
+        println!("Sent transaction: {tx_hash}");
 
         Ok(contract_addr)
     }
