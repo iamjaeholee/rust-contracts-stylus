@@ -5,7 +5,7 @@ use alloy::{
     eips::BlockId,
     network::TransactionBuilder,
     primitives::{Address, U256},
-    providers::{Provider, ProviderBuilder},
+    providers::Provider,
     rpc::types::{BlockTransactionsKind, TransactionRequest},
     sol,
 };
@@ -125,17 +125,10 @@ mod ether_vesting {
         let tx = TransactionRequest::default()
             .with_from(account.address())
             .with_to(contract_addr)
-            .with_value(U256::from(100));
+            .with_value(U256::from(allocation));
 
-        let rpc_url = std::env::var("RPC_URL")
-            .expect("failed to load RPC_URL var from env")
-            .parse()
-            .expect("failed to parse RPC_URL string into a URL");
-
-        let provider = ProviderBuilder::new().on_http(rpc_url);
-
-        let tx_hash = provider.send_transaction(tx).await?.watch().await?;
-        println!("Sent transaction: {tx_hash}");
+        let pending_tx = account.wallet.send_transaction(tx).await?;
+        let tx_hash = pending_tx.watch().await?;
 
         Ok(contract_addr)
     }
